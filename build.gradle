@@ -1,10 +1,11 @@
 buildscript {
-    ext.agpVersion = "8.11.0"
+    ext.agpVersion = '9.1.0'
+    ext.spotbugsPluginVersion = "6.4.8"
 }
 plugins {
     id 'com.android.application' version "$agpVersion" apply false
     id 'com.android.library' version "$agpVersion" apply false
-    id 'com.github.spotbugs' version '4.8.0' apply false
+    id 'com.github.spotbugs' version "$spotbugsPluginVersion" apply false
     id 'checkstyle'
 }
 
@@ -32,6 +33,7 @@ project.ext {
     eventbusVersion = "3.3.1"
     rxAndroidVersion = "3.0.2"
     rxJavaVersion = "3.1.5"
+    spotbugsVersion = "4.9.8"
 
     //Tests
     awaitilityVersion = "3.1.6"
