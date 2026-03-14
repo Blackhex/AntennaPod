@@ -14,6 +14,10 @@ import java.util.Locale;
 
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.event.MessageEvent;
+import de.danoeh.antennapod.model.feed.FeedItem;
+import de.danoeh.antennapod.model.feed.FeedItemFilter;
+import de.danoeh.antennapod.model.feed.SortOrder;
+import de.danoeh.antennapod.storage.database.DBReader;
 import de.danoeh.antennapod.storage.database.DBWriter;
 import de.danoeh.antennapod.databinding.PlaybackSpeedFeedSettingDialogBinding;
 import de.danoeh.antennapod.ui.common.ConfirmationDialog;
@@ -24,6 +28,7 @@ import de.danoeh.antennapod.model.feed.FeedPreferences;
 import de.danoeh.antennapod.ui.screen.preferences.PreferenceListDialog;
 import de.danoeh.antennapod.ui.screen.preferences.PreferenceSwitchDialog;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import org.greenrobot.eventbus.EventBus;
@@ -58,6 +63,8 @@ public class FeedMultiSelectActionHandler {
             playbackSpeedPrefHandler();
         } else if (id == R.id.edit_tags) {
             editFeedPrefTags();
+        } else if (id == R.id.add_unplayed_to_queue_item) {
+            addUnplayedToQueue();
         } else if (id == R.id.remove_all_inbox_item) {
             removeAllFromInbox();
         } else if (id == R.id.share_feed) {
@@ -156,6 +163,25 @@ public class FeedMultiSelectActionHandler {
         }
         TagSettingsDialog.newInstance(preferencesList).show(activity.getSupportFragmentManager(),
                 TagSettingsDialog.TAG);
+    }
+
+    private void addUnplayedToQueue() {
+            Completable.fromAction(() -> {
+                List<FeedItem> toQueue = new ArrayList<>();
+                for (Feed feed : selectedItems) {
+                    List<FeedItem> items = DBReader.getFeedItemList(feed, new FeedItemFilter(FeedItemFilter.UNPLAYED,
+                            FeedItemFilter.NOT_QUEUED), SortOrder.DATE_OLD_NEW, 0, Integer.MAX_VALUE);
+                    toQueue.addAll(items);
+                }
+
+                DBWriter.addQueueItem(activity, toQueue.toArray(new FeedItem[0]));
+            })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(
+                        () -> EventBus.getDefault().post(new MessageEvent(activity.getString(R.string.added_unplayed_to_queue_msg))),
+                        error -> Log.e(TAG, Log.getStackTraceString(error))
+                    );
     }
 
     private void removeAllFromInbox() {
